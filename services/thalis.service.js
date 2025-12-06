@@ -14,11 +14,11 @@ export const addThali = async (thaliData, userId) => {
       available_until,
       rotis,
       sabzi,
-      daal, // This will be 'yes' or 'no' from frontend
+      daal,
       daal_replacement,
-      rice, // This will be 'yes' or 'no' from frontend
-      salad, // This will be 'yes' or 'no' from frontend
-      sweet, // This will be 'yes' or 'no' from frontend
+      rice,
+      salad,
+      sweet,
       sweet_info,
       other_items,
       price,
@@ -27,35 +27,16 @@ export const addThali = async (thaliData, userId) => {
 
     await client.query('BEGIN');
 
-    // Set available_date to current date
     const today = new Date();
     const available_date = today.toLocaleDateString('en-CA');
 
-    // Convert 'yes'/'no' strings to boolean for database
-    const daalBoolean = daal === 'yes';
-    const riceBoolean = rice === 'yes';
-    const saladBoolean = salad === 'yes';
-    const sweetBoolean = sweet === 'yes';
-
-    // Check if thali already exists for this mess, type, and current date
-    const checkQuery = `
-      SELECT id FROM thalis 
-      WHERE mess_id = $1 AND type = $2 AND available_date = $3 AND is_deleted = false
-    `;
-    const checkResult = await client.query(checkQuery, [messID, type, available_date]);
-
-    if (checkResult.rows.length > 0) {
-      throw new Error('A thali already exists for this mess and type today');
-    }
-
-    // Insert into thalis table with boolean values
     const insertQuery = `
       INSERT INTO thalis (
-        mess_id, thali_name, type, published, editable, available_from, 
-        available_until, rotis, sabzi, daal, daal_replacement, rice, salad, 
-        sweet, sweet_info, other_items, price, image, available_date
+        mess_id, thali_name, type, published, editable, available_from,
+        available_until, rotis, sabzi, daal, daal_replacement,
+        rice, salad, sweet, sweet_info, other_items, price, image, available_date
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
       RETURNING id
     `;
 
@@ -69,11 +50,11 @@ export const addThali = async (thaliData, userId) => {
       available_until,
       rotis,
       sabzi,
-      daalBoolean, // Store as boolean
+      Boolean(daal),
       daal_replacement,
-      riceBoolean, // Store as boolean
-      saladBoolean, // Store as boolean
-      sweetBoolean, // Store as boolean
+      Boolean(rice),
+      Boolean(salad),
+      Boolean(sweet),
       sweet_info,
       other_items,
       price,
@@ -81,19 +62,18 @@ export const addThali = async (thaliData, userId) => {
       available_date
     ]);
 
-    const thaliId = result.rows[0].id;
-
     await client.query('COMMIT');
 
-    return { success: true, thaliId };
+    return { success: true, thaliId: result.rows[0].id };
+
   } catch (error) {
-    console.log(error.message);
     await client.query('ROLLBACK');
     throw error;
   } finally {
     client.release();
   }
 };
+
 
 export const getMessIdByUserId = async (userId) => {
   const client = await pool.connect();
@@ -123,11 +103,11 @@ export const updateThali = async (thaliId, thaliData) => {
       available_until,
       rotis,
       sabzi,
-      daal, // This will be 'yes' or 'no' from frontend
+      daal,
       daal_replacement,
-      rice, // This will be 'yes' or 'no' from frontend
-      salad, // This will be 'yes' or 'no' from frontend
-      sweet, // This will be 'yes' or 'no' from frontend
+      rice,
+      salad,
+      sweet,
       sweet_info,
       other_items,
       price,
@@ -136,13 +116,6 @@ export const updateThali = async (thaliId, thaliData) => {
 
     await client.query('BEGIN');
 
-    // Convert 'yes'/'no' strings to boolean for database
-    const daalBoolean = daal === 'yes';
-    const riceBoolean = rice === 'yes';
-    const saladBoolean = salad === 'yes';
-    const sweetBoolean = sweet === 'yes';
-
-    // Update thali with boolean values
     const updateQuery = `
       UPDATE thalis 
       SET 
@@ -175,11 +148,11 @@ export const updateThali = async (thaliId, thaliData) => {
       available_until,
       rotis,
       sabzi,
-      daalBoolean, // Store as boolean
+      Boolean(daal),
       daal_replacement,
-      riceBoolean, // Store as boolean
-      saladBoolean, // Store as boolean
-      sweetBoolean, // Store as boolean
+      Boolean(rice),
+      Boolean(salad),
+      Boolean(sweet),
       sweet_info,
       other_items,
       price,
@@ -201,6 +174,7 @@ export const updateThali = async (thaliId, thaliData) => {
     client.release();
   }
 };
+
 
 export const deleteThali = async (thaliId) => {
   const client = await pool.connect();
@@ -234,6 +208,7 @@ export const deleteThali = async (thaliId) => {
 };
 
 export const getThalis = async (messId, type) => {
+  // debugger;
   try {
     let query = `
   SELECT 
@@ -291,17 +266,7 @@ export const getThalis = async (messId, type) => {
 
     const result = await pool.query(query, params);
 
-    // Convert boolean values back to 'yes'/'no' strings for frontend
-    const thalisWithStringValues = result.rows.map(thali => ({
-      ...thali,
-      daal: thali.daal ? 'yes' : 'no',
-      rice: thali.rice ? 'yes' : 'no',
-      salad: thali.salad ? 'yes' : 'no',
-      sweet: thali.sweet ? 'yes' : 'no',
-      available_date: thali.available_date // stays "YYYY-MM-DD"
-    }));
-
-    return thalisWithStringValues;
+    return result.rows;
 
   } catch (error) {
     console.error('Error fetching thalis:', error);

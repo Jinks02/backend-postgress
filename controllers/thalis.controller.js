@@ -3,7 +3,7 @@ export const addThaliController = async (req, res) => {
   try {
     const thaliData = req.body;
     const userId = req.userId;
-    console.log('user id',userId);
+    
     const result = await addThali(thaliData,userId);
     
     res.status(201).json({

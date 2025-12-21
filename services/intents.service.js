@@ -1,4 +1,8 @@
 import pool from './../config/db.config.js';
+import { toIST } from '../utils/time.util.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
 
 export const createIntents = async (orderData) => {
   const client = await pool.connect();
@@ -84,7 +88,7 @@ export const getIntentsByUserId = async (userId) => {
       messName: intent.mess_name,
       headCount: intent.head_count,
       totalAmount: intent.total_amount,
-      timestamp: intent.order_time,
+      timestamp: toIST(intent.order_time),
       selectedItems: itemsByIntents[intent.order_id] || []
     }));
 
@@ -140,7 +144,7 @@ export const getIntentsByMessId = async (messId) => {
       userName: intent.user_name,
       headCount: intent.head_count,
       totalAmount: intent.total_amount,
-      timestamp: intent.order_time,
+      timestamp: toIST(intent.order_time),
       selectedItems: itemsByIntents[intent.order_id] || []
     }));
 

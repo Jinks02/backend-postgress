@@ -1,4 +1,4 @@
-// create-product-table.js
+
 import pool from '../config/db.config.js';
 
 const createUserTable = async () => {

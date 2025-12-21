@@ -1,4 +1,8 @@
 import pool from './../config/db.config.js'
+import { nowIST, toIST, istStartOfDay } from '../utils/time.util.js';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
 
 export const addThali = async (thaliData, userId) => {
   const client = await pool.connect();
@@ -27,8 +31,26 @@ export const addThali = async (thaliData, userId) => {
 
     await client.query('BEGIN');
 
-    const today = new Date();
-    const available_date = today.toLocaleDateString('en-CA');
+    const available_date = dayjs()
+      .tz('Asia/Kolkata')
+      .format('YYYY-MM-DD');
+
+    const afIST = `${available_date} ${available_from}`; // "2025-12-14 12:00"
+    const auIST = `${available_date} ${available_until}`;
+
+    const afUTC = dayjs
+      .tz(afIST, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata')
+      .utc()
+      .toDate();
+
+    const auUTC = dayjs
+      .tz(auIST, 'YYYY-MM-DD HH:mm', 'Asia/Kolkata')
+      .utc()
+      .toDate();
+
+    // console.log('available_from:', available_from);
+    // console.log('afIST string:', afIST);
+
 
     const insertQuery = `
       INSERT INTO thalis (
@@ -46,8 +68,8 @@ export const addThali = async (thaliData, userId) => {
       type,
       published || false,
       editable || true,
-      available_from,
-      available_until,
+      afUTC,
+      auUTC,
       rotis,
       sabzi,
       Boolean(daal),
@@ -79,7 +101,7 @@ export const getMessIdByUserId = async (userId) => {
   const client = await pool.connect();
   try {
     const result = await client.query('SELECT id FROM mess WHERE user_id = $1', [userId]);
-    
+
     return result.rows[0].id;
   }
   catch (error) {
@@ -115,6 +137,8 @@ export const updateThali = async (thaliId, thaliData) => {
     } = thaliData;
 
     await client.query('BEGIN');
+    const afUTC = dayjs.tz(available_from, 'Asia/Kolkata').utc().toDate();
+    const auUTC = dayjs.tz(available_until, 'Asia/Kolkata').utc().toDate();
 
     const updateQuery = `
       UPDATE thalis 
@@ -144,8 +168,8 @@ export const updateThali = async (thaliId, thaliData) => {
       thali_name,
       published,
       editable,
-      available_from,
-      available_until,
+      afUTC,
+      auUTC,
       rotis,
       sabzi,
       Boolean(daal),
@@ -266,7 +290,15 @@ export const getThalis = async (messId, type) => {
 
     const result = await pool.query(query, params);
 
-    return result.rows;
+    return result.rows.map(thali => ({
+      ...thali,
+      // available_from: thali.available_from,
+      // available_until: thali.available_until,
+      available_from: toIST(thali.available_from),
+      available_until: toIST(thali.available_until),
+      created_at: toIST(thali.created_at),
+      updated_at: toIST(thali.updated_at)
+    }));
 
   } catch (error) {
     console.error('Error fetching thalis:', error);
@@ -274,22 +306,29 @@ export const getThalis = async (messId, type) => {
   }
 };
 
-export function getTodayDate() {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0'); // months are 0-based
-  const dd = String(today.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
+// export function getTodayDate() {
+//   const today = new Date();
+//   const yyyy = today.getFullYear();
+//   const mm = String(today.getMonth() + 1).padStart(2, '0'); // months are 0-based
+//   const dd = String(today.getDate()).padStart(2, '0');
+//   return `${yyyy}-${mm}-${dd}`;
+// }
+
+export function getTodayISTDate() {
+  return dayjs()
+    .tz('Asia/Kolkata')
+    .format('YYYY-MM-DD');
 }
+
 export const getMessSpecificThali = async (messId, type) => {
   try {
-  //  const result = await pool.query("SELECT * FROM thalis WHERE mess_id = $1 AND available_date = (NOW() AT TIME ZONE 'Asia/Kolkata');", [messId]);
-  const today = getTodayDate()
-  const result = await pool.query(
-  "SELECT * FROM thalis WHERE mess_id = $1 AND available_date = $2 AND published = $3",
-  [messId, today, true]
-);
-  const thalis = result.rows.map(mapThaliToFrontend);
+    //  const result = await pool.query("SELECT * FROM thalis WHERE mess_id = $1 AND available_date = (NOW() AT TIME ZONE 'Asia/Kolkata');", [messId]);
+    const today = getTodayISTDate();
+    const result = await pool.query(
+      "SELECT * FROM thalis WHERE mess_id = $1 AND available_date = $2 AND published = $3",
+      [messId, today, true]
+    );
+    const thalis = result.rows.map(mapThaliToFrontend);
 
     return thalis;
 

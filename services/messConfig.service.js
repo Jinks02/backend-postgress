@@ -16,7 +16,8 @@ export const getMessaLocation = async (body) => {
       coordinates: {
         lat: parseFloat(row.latitude),
         lng: parseFloat(row.longitude)
-      }
+      },
+      image: row.image
     }));
 
     return messLocations;

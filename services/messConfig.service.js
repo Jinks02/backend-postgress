@@ -4,7 +4,7 @@ import { toIST } from '../utils/time.util.js';
 export const getMessaLocation = async (body) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM mess`
+      `SELECT * FROM mess order by id desc`
     );
      const messLocations = result.rows.map(row => ({
       id: row.id,
@@ -82,6 +82,7 @@ export const isMessExistForUser = async (userId) => {
       `SELECT * FROM mess WHERE user_id = $1`,
       [userId]
     );
+    console.log(result);
     return result.rows.length > 0;
   } catch (err) {
     throw new Error('Error checking if mess exists: ' + err.message);

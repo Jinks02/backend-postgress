@@ -5,6 +5,8 @@ import cors from 'cors';
 import userRoutes from './routes/user.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import thaliRoutes from './routes/thalis.routes.js';
+import messRoutes from './routes/mess-config.routes.js';
+import intentRoutes from './routes/intents.routes.js';
 // import pool from './config/db.config.js'
 dotenv.config();
 
@@ -19,9 +21,10 @@ app.use(express.json());
 
 
 app.use('/api/auth', authRoutes);
-app.use('/api/', userRoutes);
-app.use('/api/', thaliRoutes);
-
+app.use('/api/users', userRoutes);
+app.use('/api/thalis', thaliRoutes);
+app.use('/api/mess', messRoutes);
+app.use('/api/intents', intentRoutes);
 
 
 export default app;

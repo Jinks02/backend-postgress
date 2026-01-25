@@ -7,7 +7,6 @@ const router = express.Router();
 
 router.post('/login', loginController);
 router.post('/signup', createUserController);
-router.get('/fetch', fetchUsers);
 router.get('/config', auth,getMapApiKey )
 router.put('/update-profile', auth, updateUserProfile);
 router.put('/update-mess', auth, updateMessDetails);
